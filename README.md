@@ -1,2 +1,4 @@
-# url-shortener-assignment-infracloud
-URL Shortener assignment for Infracloud
+# URL Shortener 
+This repository contains solution for the URL Shortener assignment
+
+## Usage instructions
