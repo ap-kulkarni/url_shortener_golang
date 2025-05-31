@@ -2,36 +2,21 @@ package url_shortner
 
 import (
 	"fmt"
-	"io"
-	"net/http"
+	"net/url"
 )
 
 const (
-	ShortUrlLength   = 7
-	Host             = "http://localhost:8080"
-	ShortUrlResponse = "{\"short_url\": \"%s/%s\"}"
+	ShortUrlLength = 7
+	Host           = "http://localhost:8080/"
 )
 
 var UrlsMap = map[string]string{}
 
-func ShortenUrlHandler(w http.ResponseWriter, req *http.Request) {
-	reqBody, err := io.ReadAll(req.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("error reading request body"))
-		return
-	}
-	urlToShorten, err := GetUrlFromRequestBody(reqBody)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("bad request or no url found in the request"))
-		return
-	}
-	if !ValidateUrl(urlToShorten) {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("url not valid"))
-		return
-	}
+func getFullUrl(shortUrlSegment string) string {
+	return fmt.Sprintf("%s%s", Host, shortUrlSegment)
+}
+
+func getUniqueShortSegment() string {
 	var shortUrlSegment string
 	for {
 		shortUrlSegment = GetRandomString(ShortUrlLength)
@@ -39,16 +24,22 @@ func ShortenUrlHandler(w http.ResponseWriter, req *http.Request) {
 			break
 		}
 	}
-	UrlsMap[shortUrlSegment] = urlToShorten
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write([]byte(fmt.Sprintf(ShortUrlResponse, Host, shortUrlSegment)))
+	return shortUrlSegment
 }
 
-func LongUrlHandler(w http.ResponseWriter, req *http.Request) {
-	_, _ = io.WriteString(w, "https://google.com/search?q=fluffy+cat")
-}
+func ShortenUrl(urlToShorten *url.URL) string {
+	var shortUrlSegment string
+	urlString := urlToShorten.String()
 
-func MetricHandler(w http.ResponseWriter, req *http.Request) {
-	_, _ = io.WriteString(w, "{\"youtube\" : 1}")
+	for key, value := range UrlsMap {
+		if value == urlString {
+			shortUrlSegment = key
+		}
+	}
+	if shortUrlSegment == "" {
+		shortUrlSegment = getUniqueShortSegment()
+		UrlsMap[shortUrlSegment] = urlToShorten.String()
+	}
+
+	return getFullUrl(shortUrlSegment)
 }
