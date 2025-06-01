@@ -1,10 +1,13 @@
 package api
 
 import (
+	"fmt"
 	"github.com/ap-kulkarni/url-shortener-assignment-infracloud/pkg/url_shortner"
 	"io"
 	"net/http"
 )
+
+const shortenUrlResponse = "{\"shortUrl\":\"%s\"}"
 
 func ShortenUrlHandler(w http.ResponseWriter, req *http.Request) {
 	reqBody, err := io.ReadAll(req.Body)
@@ -19,13 +22,19 @@ func ShortenUrlHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	shortUrl := url_shortner.ShortenUrl(urlToShorten)
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write([]byte(shortUrl))
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(fmt.Sprintf(shortenUrlResponse, shortUrl)))
 }
 
-func LongUrlHandler(w http.ResponseWriter, req *http.Request) {
-	_, _ = io.WriteString(w, "https://google.com/search?q=fluffy+cat")
+func GetLongUrlHandler(w http.ResponseWriter, req *http.Request) {
+	shortUrlSegment := req.PathValue("shortened_url")
+	longUrl := url_shortner.GetLongUrlFromShortUrl(shortUrlSegment)
+	if longUrl == "" {
+		WriteErrorResponse(w, http.StatusNotFound, "shortened url not found")
+	}
+	w.Header().Set("Location", longUrl)
+	w.WriteHeader(http.StatusMovedPermanently)
 }
 
 func MetricHandler(w http.ResponseWriter, req *http.Request) {

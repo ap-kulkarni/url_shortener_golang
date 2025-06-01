@@ -43,3 +43,7 @@ func ShortenUrl(urlToShorten *url.URL) string {
 
 	return getFullUrl(shortUrlSegment)
 }
+
+func GetLongUrlFromShortUrl(shortUrlSegment string) string {
+	return UrlsMap[shortUrlSegment]
+}
