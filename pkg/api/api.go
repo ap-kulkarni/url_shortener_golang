@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-const shortenUrlResponse = "{\"shortUrl\":\"%s\"}"
+const shortenUrlResponse = "{\"shortUrl\": \"%s\"}"
 
 func ShortenUrlHandler(w http.ResponseWriter, req *http.Request) {
 	reqBody, err := io.ReadAll(req.Body)
@@ -32,6 +32,7 @@ func GetLongUrlHandler(w http.ResponseWriter, req *http.Request) {
 	longUrl := url_shortner.GetLongUrlFromShortUrl(shortUrlSegment)
 	if longUrl == "" {
 		WriteErrorResponse(w, http.StatusNotFound, "shortened url not found")
+		return
 	}
 	w.Header().Set("Location", longUrl)
 	w.WriteHeader(http.StatusMovedPermanently)

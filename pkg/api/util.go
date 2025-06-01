@@ -8,9 +8,10 @@ import (
 	"net/url"
 )
 
-const errorResponse = "{\"error\":\"%s\"}"
+const errorResponse = "{\"error\": \"%s\"}"
 
 func WriteErrorResponse(w http.ResponseWriter, status int, error string) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_, _ = w.Write([]byte(fmt.Sprintf(errorResponse, error)))
 }
