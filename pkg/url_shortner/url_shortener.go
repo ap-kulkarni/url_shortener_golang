@@ -2,7 +2,9 @@ package url_shortner
 
 import (
 	"fmt"
+	"github.com/bits-and-blooms/bloom/v3"
 	"net/url"
+	"sync"
 )
 
 const (
@@ -10,40 +12,23 @@ const (
 	Host           = "http://localhost:8080/"
 )
 
-var UrlsMap = map[string]string{}
+var urlsAggregate = &ShortenedUrlsAggregate{
+	urlsMap:              make(map[string]string),
+	lock:                 sync.Mutex{},
+	shortenedUrlsHistory: bloom.NewWithEstimates(4_000_000_000_000, 0.1),
+}
 
 func getFullUrl(shortUrlSegment string) string {
 	return fmt.Sprintf("%s%s", Host, shortUrlSegment)
 }
 
-func getUniqueShortSegment() string {
-	var shortUrlSegment string
-	for {
-		shortUrlSegment = GetRandomString(ShortUrlLength)
-		if UrlsMap[shortUrlSegment] == "" {
-			break
-		}
-	}
-	return shortUrlSegment
-}
-
 func ShortenUrl(urlToShorten *url.URL) string {
 	var shortUrlSegment string
 	urlString := urlToShorten.String()
-
-	for key, value := range UrlsMap {
-		if value == urlString {
-			shortUrlSegment = key
-		}
-	}
-	if shortUrlSegment == "" {
-		shortUrlSegment = getUniqueShortSegment()
-		UrlsMap[shortUrlSegment] = urlToShorten.String()
-	}
-
+	shortUrlSegment = urlsAggregate.ShortenUrl(urlString)
 	return getFullUrl(shortUrlSegment)
 }
 
 func GetLongUrlFromShortUrl(shortUrlSegment string) string {
-	return UrlsMap[shortUrlSegment]
+	return urlsAggregate.GetLongUrlFromShortUrl(shortUrlSegment)
 }
