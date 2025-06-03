@@ -2,12 +2,13 @@ package api
 
 import (
 	"fmt"
-	"github.com/ap-kulkarni/url-shortener-assignment-infracloud/pkg/url_shortner"
 	"io"
 	"net/http"
+
+	"github.com/ap-kulkarni/url-shortener-assignment-infracloud/pkg/url_shortner"
 )
 
-const shortenUrlResponse = "{\"shortUrl\": \"%s\"}"
+const shortenUrlResponse = "{\"short_url\": \"%s\"}"
 
 func ShortenUrlHandler(w http.ResponseWriter, req *http.Request) {
 	reqBody, err := io.ReadAll(req.Body)
@@ -19,6 +20,9 @@ func ShortenUrlHandler(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
+	}
+	if urlToShorten.Host == "" || urlToShorten.Scheme == "" {
+		WriteErrorResponse(w, http.StatusBadRequest, "no valid url in request body")
 	}
 	shortUrl := url_shortner.ShortenUrl(urlToShorten)
 
