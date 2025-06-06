@@ -105,7 +105,7 @@ func (s *ShortenedUrlsAggregate) ShortenUrl(urlToShorten *url.URL) string {
 	}
 	s.urlsMap[shortUrlSegment] = urlString
 	s.shortenedUrlsHistory.Add([]byte(urlString))
-	s.updateDomainCount(urlToShorten.Host)
+	s.updateDomainCount(urlToShorten.Hostname())
 	return shortUrlSegment
 }
 
@@ -119,4 +119,25 @@ func (s *ShortenedUrlsAggregate) updateDomainCount(domain string) {
 	}
 	domainCount := &DomainCount{domain, 1, 0}
 	heap.Push(domainStats, domainCount)
+}
+
+func (s *ShortenedUrlsAggregate) GetTopNDomains(count int) []DomainCount {
+	totalConvertedDomains := s.shortenedDomainsStats.Len()
+	if totalConvertedDomains == 0 {
+		return nil
+	}
+	if totalConvertedDomains < count {
+		count = totalConvertedDomains
+	}
+	domainCounts := make([]DomainCount, count)
+	// To correctly maintain heap structure and have correct domain data in descending order
+	// we pop the elements from the heap one-by-one and reinsert them
+	for i := range count {
+		domainCount := heap.Pop(s.shortenedDomainsStats).(*DomainCount)
+		domainCounts[i] = *domainCount
+	}
+	for _, d := range domainCounts {
+		heap.Push(s.shortenedDomainsStats, &d)
+	}
+	return domainCounts
 }

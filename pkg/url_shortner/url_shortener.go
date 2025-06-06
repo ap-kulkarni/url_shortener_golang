@@ -25,3 +25,7 @@ func ShortenUrl(urlToShorten *url.URL) string {
 func GetLongUrlFromShortUrl(shortUrlSegment string) string {
 	return urlsAggregate.GetLongUrlFromShortUrl(shortUrlSegment)
 }
+
+func GetTopNConvertedDomains(count int) []DomainCount {
+	return urlsAggregate.GetTopNDomains(count)
+}

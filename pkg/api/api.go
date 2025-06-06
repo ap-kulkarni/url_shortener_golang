@@ -8,7 +8,10 @@ import (
 	"github.com/ap-kulkarni/url-shortener-assignment-infracloud/pkg/url_shortner"
 )
 
-const shortenUrlResponse = "{\"short_url\": \"%s\"}"
+const (
+	shortenUrlResponse     = `{"short_url": "%s"}`
+	countOfTopDomainsToGet = 3
+)
 
 func ShortenUrlHandler(w http.ResponseWriter, req *http.Request) {
 	reqBody, err := io.ReadAll(req.Body)
@@ -21,8 +24,9 @@ func ShortenUrlHandler(w http.ResponseWriter, req *http.Request) {
 		WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if urlToShorten.Host == "" || urlToShorten.Scheme == "" {
+	if urlToShorten.Hostname() == "" || urlToShorten.Scheme == "" {
 		WriteErrorResponse(w, http.StatusBadRequest, "no valid url in request body")
+		return
 	}
 	shortUrl := url_shortner.ShortenUrl(urlToShorten)
 
@@ -43,5 +47,12 @@ func GetLongUrlHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func MetricHandler(w http.ResponseWriter, req *http.Request) {
-	_, _ = io.WriteString(w, "{\"youtube\" : 1}")
+	topDomainData := url_shortner.GetTopNConvertedDomains(countOfTopDomainsToGet)
+	if topDomainData == nil {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = io.WriteString(w, GetTopDomainDataInJson(topDomainData))
 }
