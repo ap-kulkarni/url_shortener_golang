@@ -2,9 +2,7 @@ package url_shortner
 
 import (
 	"fmt"
-	"github.com/bits-and-blooms/bloom/v3"
 	"net/url"
-	"sync"
 )
 
 const (
@@ -12,11 +10,7 @@ const (
 	Host           = "http://localhost:8080/"
 )
 
-var urlsAggregate = &ShortenedUrlsAggregate{
-	urlsMap:              make(map[string]string),
-	lock:                 sync.Mutex{},
-	shortenedUrlsHistory: bloom.NewWithEstimates(4_000_000_000_000, 0.1),
-}
+var urlsAggregate = InitShortenedUrlsAggregate()
 
 func getFullUrl(shortUrlSegment string) string {
 	return fmt.Sprintf("%s%s", Host, shortUrlSegment)
@@ -24,8 +18,7 @@ func getFullUrl(shortUrlSegment string) string {
 
 func ShortenUrl(urlToShorten *url.URL) string {
 	var shortUrlSegment string
-	urlString := urlToShorten.String()
-	shortUrlSegment = urlsAggregate.ShortenUrl(urlString)
+	shortUrlSegment = urlsAggregate.ShortenUrl(urlToShorten)
 	return getFullUrl(shortUrlSegment)
 }
 
