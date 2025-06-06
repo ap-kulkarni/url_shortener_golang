@@ -1,54 +1,16 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"strings"
 	"testing"
 )
 
-func readShortUrlFromResponse(t *testing.T, response []byte) string {
-	t.Helper()
-	var result map[string]any
-	err := json.Unmarshal(response, &result)
-	if err != nil {
-		t.Errorf("Error unmarshalling body: %v", err)
-	}
-	return result["short_url"].(string)
-}
-
-func executeShortenUrlRequest(shortenRequestBody string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodPost, "/shorten", strings.NewReader(shortenRequestBody))
-	w := httptest.NewRecorder()
-
-	ShortenUrlHandler(w, req)
-	return w
-}
-
-func executeGetLongUrlRequest(shortUrlSegment string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodGet, shortUrlSegment, nil)
-	req.SetPathValue("shortened_url", strings.TrimLeft(shortUrlSegment, "/"))
-	w := httptest.NewRecorder()
-	GetLongUrlHandler(w, req)
-	return w
-}
-
-func extractShortUrlSegment(shortenedUrl string) string {
-	parsedUrl, _ := url.Parse(shortenedUrl)
-	return parsedUrl.Path
-}
-
 func TestShortenUrlHandler(t *testing.T) {
 	t.Run("passing valid url gives short url", func(t *testing.T) {
-		shortenReqBody := "{\"url\": \"https://www.google.com/search?q=fluffy+cat\"}"
+		shortenReqBody := getShortenUrlRequestBody("https://www.google.com/search?q=fluffy+cat")
 		w := executeShortenUrlRequest(shortenReqBody)
-		if w.Code != http.StatusOK {
-			t.Errorf("Received wrong status code: %v, expected: %v", w.Code, http.StatusOK)
-		}
+		assertCorrectStatusCode(t, w.Code, http.StatusOK)
 		body, err := io.ReadAll(w.Result().Body)
 		if err != nil {
 			t.Errorf("Error reading body: %v", err)
@@ -60,35 +22,28 @@ func TestShortenUrlHandler(t *testing.T) {
 	})
 
 	t.Run("passing invalid url gives err", func(t *testing.T) {
-		shortenReqBody := "{\"url\": \"google\"}"
+		shortenReqBody := getShortenUrlRequestBody("google")
 		w := executeShortenUrlRequest(shortenReqBody)
-		if w.Result().StatusCode != http.StatusBadRequest {
-			t.Errorf("shorten url api didn't return bad request for invalid url")
-		}
+		assertCorrectStatusCode(t, w.Code, http.StatusBadRequest)
 	})
 
 	t.Run("passing invalid request body gives err", func(t *testing.T) {
-		shortenReqBody := "{\"url_\": \"google\"}"
+		shortenReqBody := `{"url_": "google"}`
 		w := executeShortenUrlRequest(shortenReqBody)
-
-		if w.Result().StatusCode != http.StatusBadRequest {
-			t.Errorf("shorten url api didn't return bad request for invalid request body")
-		}
+		assertCorrectStatusCode(t, w.Code, http.StatusBadRequest)
 	})
 }
 
 func TestGetLongUrlHandler(t *testing.T) {
 	t.Run("passing valid short url redirects to long url", func(t *testing.T) {
 		urlToShorten := "https://www.google.com/search?q=fluffy+cat"
-		shortenReqBody := fmt.Sprintf("{\"url\": \"%s\"}", urlToShorten)
+		shortenReqBody := getShortenUrlRequestBody(urlToShorten)
 		w := executeShortenUrlRequest(shortenReqBody)
 		body, _ := io.ReadAll(w.Result().Body)
 		shortUrl := readShortUrlFromResponse(t, body)
 		shortUrlSegment := extractShortUrlSegment(shortUrl)
 		w = executeGetLongUrlRequest(shortUrlSegment)
-		if w.Code != http.StatusMovedPermanently {
-			t.Errorf("Received wrong status code: %v, expected: %v", w.Code, http.StatusMovedPermanently)
-		}
+		assertCorrectStatusCode(t, w.Code, http.StatusMovedPermanently)
 		if w.Header().Get("Location") != urlToShorten {
 			t.Errorf("Received wrong location header: %v, expected: %v", w.Header(), urlToShorten)
 		}
@@ -97,8 +52,6 @@ func TestGetLongUrlHandler(t *testing.T) {
 	t.Run("passing invalid short url gives not found", func(t *testing.T) {
 		shortUrlSegment := "/abc1234"
 		w := executeGetLongUrlRequest(shortUrlSegment)
-		if w.Code != http.StatusNotFound {
-			t.Errorf("Received wrong status code: %v, expected: %v", w.Code, http.StatusNotFound)
-		}
+		assertCorrectStatusCode(t, w.Code, http.StatusNotFound)
 	})
 }

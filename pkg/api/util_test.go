@@ -5,13 +5,6 @@ import (
 	"testing"
 )
 
-func assertCorrectMessage(t *testing.T, got, want any) {
-	t.Helper()
-	if got != want {
-		t.Errorf("got %v, want %v", got, want)
-	}
-}
-
 func TestGetUrlFromRequestBody(t *testing.T) {
 	testUrl := "http://test.com"
 	t.Run("passing valid url", func(t *testing.T) {
