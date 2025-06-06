@@ -80,17 +80,6 @@ func InitShortenedUrlsAggregate() *ShortenedUrlsAggregate {
 func (s *ShortenedUrlsAggregate) GetLongUrlFromShortUrl(shortUrl string) string {
 	return s.urlsMap[shortUrl]
 }
-func (s *ShortenedUrlsAggregate) ContainsLongUrl(urlToCheck string) bool {
-	if !s.shortenedUrlsHistory.Test([]byte(urlToCheck)) {
-		return false
-	}
-	for _, longUrl := range s.urlsMap {
-		if longUrl == urlToCheck {
-			return true
-		}
-	}
-	return false
-}
 
 func (s *ShortenedUrlsAggregate) ContainsShortUrl(shortUrl string) bool {
 	return s.GetLongUrlFromShortUrl(shortUrl) != ""
