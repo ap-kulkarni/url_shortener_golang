@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/ap-kulkarni/url-shortener-assignment-infracloud/pkg/url_shortner"
+	"github.com/ap-kulkarni/url_shortener_golang/pkg/url_shortner"
 )
 
 const (

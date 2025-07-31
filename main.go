@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ap-kulkarni/url-shortener-assignment-infracloud/pkg/api"
+	"github.com/ap-kulkarni/url_shortener_golang/pkg/api"
 	"log"
 	"net/http"
 )

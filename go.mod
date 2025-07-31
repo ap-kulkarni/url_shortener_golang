@@ -1,4 +1,4 @@
-module github.com/ap-kulkarni/url-shortener-assignment-infracloud
+module github.com/ap-kulkarni/url_shortener_golang
 
 go 1.24.3
 
